@@ -6,12 +6,13 @@ import OrderAnalysis from './components/OrderAnalysis';
 import ClarificationPanel from './components/ClarificationPanel';
 import OrderSummary from './components/OrderSummary';
 import DeliveryNote from './components/DeliveryNote';
+import Bill from './components/Bill';
 import OrderHistory from './components/OrderHistory';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import EmptyState from './components/EmptyState';
 import { parseOrder, clarifyOrder, confirmOrder } from './services/api';
-import { CheckCircle, LogOut, PlusCircle } from 'lucide-react';
+import { CheckCircle, PlusCircle } from 'lucide-react';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -98,6 +99,7 @@ function App() {
               Start New Order
             </button>
           </div>
+          <Bill order={order} />
           <DeliveryNote order={order} />
         </div>
       );

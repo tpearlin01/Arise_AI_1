@@ -8,9 +8,9 @@ export default function OrderSummary({ order }) {
   const total = validItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
   return (
-    <div className="glass-panel animate-fade-in">
+    <div className="panel animate-fade-in">
       <h2>
-        <ShoppingBag size={20} color="var(--primary)" />
+        <ShoppingBag size={20} color="var(--primary-dark)" />
         Order Summary
       </h2>
       

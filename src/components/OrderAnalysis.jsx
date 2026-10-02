@@ -6,9 +6,9 @@ export default function OrderAnalysis({ order, onClarify }) {
   if (!order || !order.items) return null;
 
   return (
-    <div className="glass-panel animate-fade-in">
+    <div className="panel animate-fade-in">
       <h2>
-        <Sparkles size={20} color="var(--primary)" />
+        <Sparkles size={20} color="var(--primary-dark)" />
         AI Order Analysis
       </h2>
       

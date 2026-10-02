@@ -16,7 +16,7 @@ export default function ClarificationPanel({ orderId, clarificationText, ambiguo
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ borderLeft: '4px solid var(--warning)' }}>
+    <div className="panel animate-fade-in" style={{ borderLeft: '4px solid var(--warning)' }}>
       <h2>
         <HelpCircle size={20} color="var(--warning)" />
         Action Required
@@ -47,7 +47,7 @@ export default function ClarificationPanel({ orderId, clarificationText, ambiguo
           disabled={!selectedOption || isResolving}
           onClick={handleConfirm}
         >
-          {isResolving ? 'Resolving...' : 'Confirm Selection'}
+          {isResolving ? 'Resolving...' : 'Update Order'}
         </button>
       </div>
 
