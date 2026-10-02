@@ -12,7 +12,7 @@ class Product(Base):
     category = Column(String)
     unit = Column(String)
     price = Column(Float)
-    stock = Column(Integer)
+    stock = Column(Float)
     aliases = Column(String)
 
 class Order(Base):
@@ -25,6 +25,7 @@ class Order(Base):
     raw_text = Column(String, nullable=True)
     clarification_msg = Column(String, nullable=True)
     ambiguous_items = Column(String, nullable=True) # JSON string of ambiguous items
+    delivery_notes = Column(String, nullable=True)
 
     items = relationship("OrderItem", back_populates="order")
 

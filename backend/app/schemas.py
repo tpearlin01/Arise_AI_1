@@ -8,7 +8,7 @@ class ProductBase(BaseModel):
     category: Optional[str] = None
     unit: str
     price: float
-    stock: int
+    stock: float
     aliases: Optional[str] = None
 
 class Product(ProductBase):
@@ -35,11 +35,12 @@ class ProductOption(BaseModel):
     name: str
     price: float
     unit: str
-    stock: int
+    stock: float
 
 class ClarificationItem(BaseModel):
     original_query: str
     reason: str
+    quantity: float = 1.0
     options: List[ProductOption] = []
 
 class OrderBase(BaseModel):
@@ -48,6 +49,7 @@ class OrderBase(BaseModel):
     raw_text: Optional[str] = None
     clarification_msg: Optional[str] = None
     ambiguous_items: Optional[str] = None
+    delivery_notes: Optional[str] = None
 
 class Order(OrderBase):
     id: int
@@ -69,3 +71,21 @@ class ParseResponse(BaseModel):
 
 class ClarifyRequest(BaseModel):
     resolutions: Dict[str, int] # original_query -> product_id
+
+class UpdatedItem(BaseModel):
+    product_id: int
+    quantity: float
+
+class ConfirmRequest(BaseModel):
+    items: Optional[List[UpdatedItem]] = None
+
+class TranslateRequest(BaseModel):
+    message: str
+    target_language: str
+
+class TranslateResponse(BaseModel):
+    translated_text: str
+
+class OrderActionResponse(BaseModel):
+    message: str
+    order: Order

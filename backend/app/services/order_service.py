@@ -1,4 +1,5 @@
 import json
+import difflib
 from sqlalchemy.orm import Session
 from ..models import Product, Order, OrderItem
 from .ai_parser import extract_order_intent
@@ -6,25 +7,35 @@ from .ai_parser import extract_order_intent
 def process_order(db: Session, message: str) -> dict:
     extracted = extract_order_intent(message)
     items = extracted.get("items", [])
+    delivery_notes = extracted.get("delivery_notes")
     
     matched_items = []
     clarification_items = []
     
-    # Simple product matching logic
+    # Simple product matching logic with fuzzy
     products = db.query(Product).all()
     
     for item in items:
         name = item.get("name", "").lower()
-        original = item.get("original_text", "")
+        original = item.get("name", "")
         quantity = item.get("quantity_num", 1.0)
         
-        # Exact match or alias match
-        matches = []
+        matches_set = set()
         for p in products:
-            if name in p.name.lower():
-                matches.append(p)
-            elif p.aliases and name in p.aliases.lower():
-                matches.append(p)
+            p_name = p.name.lower()
+            p_aliases = [a.strip() for a in (p.aliases.lower() if p.aliases else "").split(',') if a.strip()]
+            all_names = [p_name] + p_aliases
+            
+            # Exact or Substring
+            if name in p_name or any(name in a for a in p_aliases):
+                matches_set.add(p)
+            else:
+                # Fuzzy
+                close_matches = difflib.get_close_matches(name, all_names, n=1, cutoff=0.7)
+                if close_matches:
+                    matches_set.add(p)
+                    
+        matches = list(matches_set)
         
         if len(matches) == 1:
             matched_items.append({
@@ -52,6 +63,7 @@ def process_order(db: Session, message: str) -> dict:
     db_order = Order(
         status=order_status,
         raw_text=message,
+        delivery_notes=delivery_notes,
         ambiguous_items=json.dumps([
             {
                 "original_query": c["original_query"], 
