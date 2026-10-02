@@ -80,8 +80,8 @@ def deterministic_fallback_parse(message: str) -> dict:
 
 # We use the built-in JSON parsing capabilities of the LLM.
 def extract_order_intent(message: str) -> dict:
-    api_key = os.environ.get("OPENAI_API_KEY", "your_openai_api_key_here")
-    if api_key == "your_openai_api_key_here" or not api_key:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
         return deterministic_fallback_parse(message)
         
     client = OpenAI(api_key=api_key)

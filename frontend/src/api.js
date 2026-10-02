@@ -42,7 +42,7 @@ export const api = {
     return res.json();
   },
   getRecentOrders: async () => {
-    const res = await fetch(`${API_BASE}/api/orders/`);
+    const res = await fetch(`${API_BASE}/api/orders/?limit=1000`);
     if (!res.ok) throw new Error("Failed to fetch recent orders");
     return res.json();
   },

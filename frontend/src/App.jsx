@@ -176,6 +176,11 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   const [recentOrders, setRecentOrders] = useState([]);
+  const [viewingPastOrder, setViewingPastOrder] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productsError, setProductsError] = useState("");
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
   
   const [printMode, setPrintMode] = useState(null); // 'bill' | 'delivery'
 
@@ -204,20 +209,30 @@ function App() {
   }, [activeTab]);
 
   const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    setProductsError("");
     try {
       const data = await api.getProducts();
-      setProducts(data);
+      setProducts(data || []);
     } catch (e) {
       console.error(e);
+      setProductsError("Failed to load products.");
+    } finally {
+      setIsLoadingProducts(false);
     }
   };
 
   const fetchRecentOrders = async () => {
+    setIsLoadingOrders(true);
+    setOrdersError("");
     try {
       const data = await api.getRecentOrders();
-      setRecentOrders(data);
+      setRecentOrders(data || []);
     } catch (e) {
       console.error(e);
+      setOrdersError("Failed to load recent orders.");
+    } finally {
+      setIsLoadingOrders(false);
     }
   };
 
@@ -303,6 +318,9 @@ function App() {
         total_amount: result.order.total_amount
       });
       setStage(STAGES.SUCCESS);
+      // Refresh dashboard statistics
+      fetchProducts();
+      fetchRecentOrders();
     } catch (err) {
       setError(err.message || "Order could not be confirmed.");
       setStage(STAGES.SUMMARY);
@@ -329,6 +347,7 @@ function App() {
 
   const startNewOrder = () => {
     setActiveTab('new_order');
+    setViewingPastOrder(false);
     setStage(STAGES.INPUT);
     setOrderText("");
     setOrderData(null);
@@ -339,6 +358,7 @@ function App() {
   const loadRepeatOrder = (rawText) => {
     setOrderText(rawText || "");
     setActiveTab('new_order');
+    setViewingPastOrder(false);
     setStage(STAGES.INPUT);
   };
 
@@ -354,6 +374,7 @@ function App() {
         total_amount: res.total_amount
       });
       setActiveTab('new_order');
+      setViewingPastOrder(true);
       setStage(STAGES.SUCCESS);
     } catch(e) {
       console.error(e);
@@ -364,8 +385,10 @@ function App() {
   const categories = ["All", ...new Set(products.map(p => p.category))];
   const filteredProducts = products.filter(p => {
     const matchCat = selectedCategory === "All" || p.category === selectedCategory;
-    const matchQ = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                   p.aliases.toLowerCase().includes(searchQuery.toLowerCase());
+    const pName = p.name || "";
+    const pAliases = p.aliases || "";
+    const matchQ = pName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                   pAliases.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchQ;
   });
 
@@ -393,9 +416,11 @@ function App() {
   };
 
   const todayStr = new Date().toLocaleDateString();
-  const todayOrders = recentOrders.filter(o => new Date(o.created_at).toLocaleDateString() === todayStr);
-  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-  const lowStockProducts = products.filter(p => p.stock <= 5);
+  const todayOrders = recentOrders.filter(o => o.created_at && new Date(o.created_at).toLocaleDateString() === todayStr);
+  const todaySales = todayOrders
+    .filter(o => o.status === 'CONFIRMED' || o.status === 'COMPLETED' || o.status === 'DELIVERED')
+    .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const lowStockProducts = products.filter(p => (p.stock || 0) <= 5);
 
   // Print logic is now handled strictly via CSS @media print and the OrderInvoice component
   
@@ -450,19 +475,19 @@ function App() {
 
             <div className="quick-actions">
               <button className="action-card" onClick={startNewOrder}>
-                <PlusCircle className="action-icon" size={32} />
+                <div className="action-icon"><PlusCircle size={32} /></div>
                 {t.newOrderBtn || t.newOrder}
               </button>
               <button className="action-card" onClick={() => setActiveTab('catalog')}>
-                <BookOpen className="action-icon" size={32} />
+                <div className="action-icon"><Package size={32} /></div>
                 {t.catalog}
               </button>
               <button className="action-card" onClick={() => setActiveTab('recent')}>
-                <History className="action-icon" size={32} />
+                <div className="action-icon"><History size={32} /></div>
                 {t.recentOrders}
               </button>
               <button className="action-card" onClick={() => setActiveTab('assistant')}>
-                <Bot className="action-icon" size={32} />
+                <div className="action-icon"><Bot size={32} /></div>
                 {t.aiAssistant}
               </button>
             </div>
@@ -487,8 +512,8 @@ function App() {
         {/* --- NEW ORDER TAB --- */}
         {activeTab === 'new_order' && (
           <>
-            <button className="back-btn no-print" onClick={() => setActiveTab('dashboard')}>
-              <ArrowLeft size={18} /> Back to Dashboard
+            <button className="back-btn no-print" onClick={() => setActiveTab(viewingPastOrder ? 'recent' : 'dashboard')}>
+              <ArrowLeft size={18} /> {viewingPastOrder ? "Back to Orders" : "Back to Dashboard"}
             </button>
             {stage === STAGES.INPUT && (
               <div className="card animate-fade-in">
@@ -723,26 +748,33 @@ function App() {
             </div>
 
             <div className="products-grid">
-              {filteredProducts.map(p => {
-                const stockStat = getStockStatus(p.stock);
-                return (
-                  <div key={p.id} className="product-card p-4 rounded-lg border">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg">{p.name}</h3>
-                      <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">{p.brand}</span>
+              {isLoadingProducts ? (
+                <div className="col-span-full text-center p-8"><Loader2 className="spin inline mr-2"/> Loading products...</div>
+              ) : productsError ? (
+                <div className="col-span-full text-center p-8 text-danger">{productsError}</div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="col-span-full text-center text-muted p-8">No products found</div>
+              ) : (
+                filteredProducts.map(p => {
+                  const stockStat = getStockStatus(p.stock || 0);
+                  return (
+                    <div key={p.id} className="product-card p-4 rounded-lg border">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg">{p.name}</h3>
+                        <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">{p.brand}</span>
+                      </div>
+                      <div className="text-sm text-gray-500 mb-3">{p.category}</div>
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-semibold text-primary">₹{p.price} / {p.unit}</span>
+                      </div>
+                      <div className={`text-sm flex items-center gap-1 ${stockStat.className}`}>
+                        {stockStat.icon} {stockStat.label} ({p.stock || 0} available)
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500 mb-3">{p.category}</div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-semibold text-primary">₹{p.price} / {p.unit}</span>
-                    </div>
-                    <div className={`text-sm flex items-center gap-1 ${stockStat.className}`}>
-                      {stockStat.icon} {stockStat.label} ({p.stock} available)
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
-            {filteredProducts.length === 0 && <div className="text-center text-muted p-8">No products found.</div>}
             </div>
           </>
         )}
@@ -755,17 +787,21 @@ function App() {
             </button>
             <div className="card animate-fade-in">
             <h2 className="section-title mb-4">{t.recentOrders}</h2>
-            {recentOrders.length === 0 ? (
-              <div className="text-center p-8 text-muted">No recent orders found.</div>
+            {isLoadingOrders ? (
+              <div className="text-center p-8"><Loader2 className="spin inline mr-2"/> Loading orders...</div>
+            ) : ordersError ? (
+              <div className="text-center p-8 text-danger">{ordersError}</div>
+            ) : recentOrders.length === 0 ? (
+              <div className="text-center p-8 text-muted">No orders yet</div>
             ) : (
               <div className="recent-orders-list flex flex-col gap-4">
                 {recentOrders.map(order => (
                   <div key={order.id} className="recent-order-card border p-4 rounded flex justify-between items-center flex-wrap gap-4">
                     <div>
                       <div className="font-bold text-lg">ORD-{order.id}</div>
-                      <div className="text-sm text-muted">{new Date(order.created_at).toLocaleString()}</div>
+                      <div className="text-sm text-muted">{order.created_at ? new Date(order.created_at).toLocaleString() : ""}</div>
                       <div className="mt-2 text-sm">
-                        {order.items.length} items • <strong>₹{order.total_amount}</strong>
+                        {order.items ? order.items.length : 0} items • <strong>₹{order.total_amount}</strong>
                       </div>
                       <div className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded inline-block mt-2">
                         {order.status}

@@ -153,7 +153,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[schemas.Order])
 def get_recent_orders(db: Session = Depends(get_db), limit: int = 5):
-    return db.query(models.Order).filter(models.Order.status == "CONFIRMED").order_by(models.Order.created_at.desc()).limit(limit).all()
+    return db.query(models.Order).order_by(models.Order.created_at.desc()).limit(limit).all()
 
 @router.post("/translate", response_model=schemas.TranslateResponse)
 def translate_message(request: schemas.TranslateRequest):

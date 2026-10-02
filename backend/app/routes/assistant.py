@@ -113,4 +113,10 @@ DATABASE CONTEXT:
         return ChatResponse(message=answer)
     except Exception as e:
         print("Error generating final response:", e)
-        raise HTTPException(status_code=500, detail="Failed to communicate with AI service.")
+        error_msg = str(e)
+        if "AuthenticationError" in error_msg or "api_key" in error_msg.lower() or "401" in error_msg:
+            return ChatResponse(message="Error: Invalid OpenAI API key. Please check your configuration.")
+        elif "RateLimitError" in error_msg or "429" in error_msg:
+            return ChatResponse(message="Error: OpenAI rate limit exceeded or quota exceeded. Please check your billing details.")
+        else:
+            return ChatResponse(message=f"Error connecting to AI service. Please try again later.")
