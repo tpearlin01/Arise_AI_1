@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
+import Login from './components/Login';
 import OrderInput from './components/OrderInput';
 import OrderAnalysis from './components/OrderAnalysis';
 import ClarificationPanel from './components/ClarificationPanel';
@@ -9,13 +10,33 @@ import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import EmptyState from './components/EmptyState';
 import { parseOrder, clarifyOrder, confirmOrder } from './services/api';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, LogOut, PlusCircle } from 'lucide-react';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState('IDLE'); // IDLE, PROCESSING, ERROR, NEEDS_CLARIFICATION, READY, CONFIRMED
   const [isResolving, setIsResolving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+    setOrder(null);
+    setStatus('IDLE');
+  };
+
+  const handleNewOrder = () => {
+    setOrder(null);
+    setStatus('IDLE');
+  };
 
   const handleProcessOrder = async (message) => {
     try {
@@ -67,10 +88,14 @@ function App() {
     if (status === 'CONFIRMED') {
       return (
         <div className="grid gap-6 animate-fade-in">
-          <div className="glass-panel text-center" style={{ borderLeft: '4px solid var(--success)' }}>
+          <div className="panel text-center" style={{ borderLeft: '4px solid var(--success)' }}>
             <CheckCircle size={48} color="var(--success)" className="mb-4 mx-auto" />
             <h2 className="justify-center mb-2">Order Confirmed!</h2>
-            <p className="text-muted">Order ID: {order.order_id}</p>
+            <p className="text-muted mb-4">Order ID: {order.order_id}</p>
+            <button className="btn btn-primary" onClick={handleNewOrder}>
+              <PlusCircle size={18} />
+              Start New Order
+            </button>
           </div>
           <DeliveryNote order={order} />
         </div>
@@ -94,8 +119,8 @@ function App() {
         {status === 'READY' && (
           <div className="grid gap-6 animate-fade-in">
             <OrderSummary order={order} />
-            <div className="glass-panel text-center">
-              <p className="mb-4">Please review the order before confirming.</p>
+            <div className="panel text-center">
+              <p className="mb-4 text-main">Please review the order before confirming.</p>
               <button 
                 className="btn btn-success w-full"
                 onClick={handleConfirmOrder}
@@ -120,10 +145,14 @@ function App() {
     );
   };
 
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app-container">
-      <Header />
-      <main className="grid grid-cols-2 mt-4">
+      <Header user={user} onLogout={handleLogout} />
+      <main className="grid grid-cols-1 lg:grid-cols-2 mt-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         {/* Left column for input */}
         <div className="flex flex-col gap-6">
           <OrderInput 
