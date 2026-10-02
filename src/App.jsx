@@ -6,6 +6,7 @@ import OrderAnalysis from './components/OrderAnalysis';
 import ClarificationPanel from './components/ClarificationPanel';
 import OrderSummary from './components/OrderSummary';
 import DeliveryNote from './components/DeliveryNote';
+import OrderHistory from './components/OrderHistory';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import EmptyState from './components/EmptyState';
@@ -159,6 +160,7 @@ function App() {
             onProcessOrder={handleProcessOrder} 
             isProcessing={status === 'PROCESSING'} 
           />
+          {status === 'IDLE' && <OrderHistory />}
         </div>
         
         {/* Right column for results */}
