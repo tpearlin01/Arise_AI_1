@@ -11,7 +11,7 @@ import OrderHistory from './components/OrderHistory';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
 import EmptyState from './components/EmptyState';
-import { parseOrder, clarifyOrder, confirmOrder } from './services/api';
+import { parseOrder, clarifyOrder, confirmOrder } from './api';
 import { CheckCircle, PlusCircle } from 'lucide-react';
 
 function App() {
@@ -20,6 +20,7 @@ function App() {
 
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState('IDLE'); // IDLE, PROCESSING, ERROR, NEEDS_CLARIFICATION, READY, CONFIRMED
+  const [errorMessage, setErrorMessage] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -38,17 +39,20 @@ function App() {
   const handleNewOrder = () => {
     setOrder(null);
     setStatus('IDLE');
+    setErrorMessage('');
   };
 
   const handleProcessOrder = async (message) => {
     try {
       setStatus('PROCESSING');
+      setErrorMessage('');
       setOrder(null);
       const data = await parseOrder(message);
       setOrder(data);
       setStatus(data.status === 'NEEDS_CLARIFICATION' ? 'NEEDS_CLARIFICATION' : 'READY');
     } catch (err) {
       console.error(err);
+      setErrorMessage(err.message);
       setStatus('ERROR');
     }
   };
@@ -83,7 +87,7 @@ function App() {
   const renderContent = () => {
     if (status === 'IDLE') return <EmptyState />;
     if (status === 'PROCESSING') return <LoadingState message="Understanding order..." />;
-    if (status === 'ERROR') return <ErrorState onRetry={() => setStatus('IDLE')} />;
+    if (status === 'ERROR') return <ErrorState message={errorMessage} onRetry={() => { setStatus('IDLE'); setErrorMessage(''); }} />;
 
     const ambiguousItems = order?.items?.filter(item => item.status === 'AMBIGUOUS') || [];
 

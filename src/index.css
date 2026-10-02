@@ -259,20 +259,20 @@ tbody tr:hover {
 }
 
 .badge-matched {
-  background: rgba(92, 184, 92, 0.15);
-  color: #2b542c;
+  background: rgba(46, 125, 50, 0.15);
+  color: #1B5E20;
   border: 1px solid var(--success);
 }
 
 .badge-ambiguous {
-  background: rgba(240, 173, 78, 0.15);
-  color: #9a6e31;
+  background: rgba(241, 107, 79, 0.15);
+  color: #B33D26;
   border: 1px solid var(--warning);
 }
 
 .badge-outofstock {
-  background: rgba(217, 83, 79, 0.15);
-  color: #8a3431;
+  background: rgba(229, 57, 53, 0.15);
+  color: #8C1C13;
   border: 1px solid var(--danger);
 }
 
@@ -297,13 +297,13 @@ tbody tr:hover {
 
 .option-card:hover {
   background: var(--bg-light);
-  border-color: var(--primary-brown);
+  border-color: var(--blue);
 }
 
 .option-card.selected {
-  background: var(--neutral);
-  border-color: var(--primary-dark);
-  color: var(--primary-dark);
+  background: var(--light-blue);
+  border-color: var(--deep-navy);
+  color: var(--deep-navy);
   font-weight: 600;
 }
 

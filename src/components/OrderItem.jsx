@@ -6,7 +6,7 @@ export default function OrderItem({ item, onClarify }) {
   const isAmbiguous = item.status === 'AMBIGUOUS';
 
   return (
-    <tr style={{ background: isAmbiguous ? 'rgba(245, 158, 11, 0.05)' : 'transparent' }}>
+    <tr style={{ background: isAmbiguous ? 'rgba(241, 107, 79, 0.05)' : 'transparent' }}>
       <td>
         <div className="font-bold">{item.name || 'Unknown Item'}</div>
         {isAmbiguous && (
